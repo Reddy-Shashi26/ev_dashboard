@@ -90,3 +90,49 @@ export const playIndicatorSound = (isTick) => {
   osc.start();
   osc.stop(ctx.currentTime + 0.1);
 };
+
+// Powerful Bike / EV Startup Sound (Futuristic Engine Rev)
+export const playBikeStartupSound = () => {
+  const ctx = getAudioContext();
+  
+  // Main engine hum
+  const osc1 = ctx.createOscillator();
+  // Sub bass rumble
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  osc1.type = 'sawtooth';
+  osc2.type = 'square';
+  
+  // Rev up frequencies
+  osc1.frequency.setValueAtTime(50, ctx.currentTime);
+  osc1.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.8);
+  osc1.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 2.0);
+  
+  osc2.frequency.setValueAtTime(25, ctx.currentTime);
+  osc2.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.8);
+  osc2.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 2.0);
+
+  // Filter to make it sound muffled and powerful, not harsh
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(300, ctx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + 0.8);
+  filter.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 2.0);
+
+  // Volume envelope
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.2);
+  gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 1.5);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 2.5);
+
+  osc1.connect(filter);
+  osc2.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc1.start();
+  osc2.start();
+  osc1.stop(ctx.currentTime + 2.5);
+  osc2.stop(ctx.currentTime + 2.5);
+};

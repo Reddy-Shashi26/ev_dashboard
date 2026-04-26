@@ -12,7 +12,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { playGearSound, playModeSound, playAlertSound, playIndicatorSound } from './sounds';
+import { playGearSound, playModeSound, playAlertSound, playIndicatorSound, playBikeStartupSound } from './sounds';
 
 export default function App() {
   // Application State
@@ -155,10 +155,18 @@ export default function App() {
       });
       setIsConnected(true);
       
-      // Personalized Voice Greeting
-      const greeting = new SpeechSynthesisUtterance("Hello Swastik, have a safe ride.");
-      greeting.rate = 0.9; // Slightly slower, more robotic/calm voice
-      greeting.pitch = 1.1;
+      // Personalized Voice Greeting & Engine Sound
+      playBikeStartupSound();
+      
+      const greeting = new SpeechSynthesisUtterance("Hello Rider, have a safe ride.");
+      const voices = window.speechSynthesis.getVoices();
+      // Try to find a high-quality Google voice or a female English voice
+      const bestVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Google US English') || v.name.includes('Samantha') || (v.lang.startsWith('en') && v.name.includes('Female')));
+      if (bestVoice) {
+        greeting.voice = bestVoice;
+      }
+      greeting.rate = 0.95; // Friendly, natural pace
+      greeting.pitch = 1.0;
       window.speechSynthesis.speak(greeting);
 
       device.addEventListener('gattserverdisconnected', () => setIsConnected(false));
