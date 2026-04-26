@@ -158,16 +158,18 @@ export default function App() {
       // Personalized Voice Greeting & Engine Sound
       playBikeStartupSound();
       
-      const greeting = new SpeechSynthesisUtterance("Hello Rider, have a safe ride.");
-      const voices = window.speechSynthesis.getVoices();
-      // Try to find a high-quality Google voice or a female English voice
-      const bestVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Google US English') || v.name.includes('Samantha') || (v.lang.startsWith('en') && v.name.includes('Female')));
-      if (bestVoice) {
-        greeting.voice = bestVoice;
-      }
-      greeting.rate = 0.95; // Friendly, natural pace
-      greeting.pitch = 1.0;
-      window.speechSynthesis.speak(greeting);
+      setTimeout(() => {
+        const greeting = new SpeechSynthesisUtterance("Hello Rider, have a safe ride.");
+        const voices = window.speechSynthesis.getVoices();
+        // Try to find a high-quality Google voice or a female English voice
+        const bestVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Google US English') || v.name.includes('Samantha') || (v.lang.startsWith('en') && v.name.includes('Female')));
+        if (bestVoice) {
+          greeting.voice = bestVoice;
+        }
+        greeting.rate = 0.95; // Friendly, natural pace
+        greeting.pitch = 1.0;
+        window.speechSynthesis.speak(greeting);
+      }, 1800); // 1.8 second delay so the engine hum peaks first
 
       device.addEventListener('gattserverdisconnected', () => setIsConnected(false));
     } catch (error) {

@@ -42,7 +42,7 @@ void setup() {
   Serial.println("Starting BLE work!");
 
   // 1. Initialize the BLE Device with a name
-  BLEDevice::init("EV Dashboard ESP32");
+  BLEDevice::init("EV Bicycle");
 
   // 2. Create the BLE Server
   pServer = BLEDevice::createServer();
