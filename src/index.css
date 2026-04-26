@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+@import "tailwindcss";
+:root{
+  --bg: #050505;
+  --card: rgba(18,18,18,0.9);
+  --muted: #9ca3af;
+  --accent: #ff0055;
+  --accent-2: #00ff9d;
+}
+
+/* Base styles (avoid @apply to prevent unknown-utility errors) */
+body {
+  background: var(--bg);
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  margin: 0;
+}
+
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; }
+
+.bg-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+}
+
+/* small helpers used by the app */
+.neon-pink-shadow { box-shadow: 0 0 30px rgba(255,0,85,0.35); }
+.glass-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.03); }
+
+/* design helpers for refined neon look */
+.card-soft { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.03); border-radius: 16px; }
+.pill { padding: 6px 14px; border-radius: 9999px; }
+
+/* refined accent palette */
+:root{
+  --accent-pink: #ff0066; /* slightly warmer */
+  --accent-pink-strong: #ff2a7a;
+  --accent-cyan: #00d8ff;
+  --accent-green: #00ff9d;
+}
+/* Tailwind utilities will be used instead of custom helper classes. CSS variables remain below for color control. */
+
