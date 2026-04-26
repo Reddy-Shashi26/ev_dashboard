@@ -81,17 +81,24 @@ void loop() {
         
         // ---------------------------------------------------------
         // SIMULATION LOGIC: 
-        // Here we simulate the speed going up from 0 to 180, then resetting.
-        // In a real project, you would replace `currentSpeed` with a reading 
-        // from a Hall Effect sensor, GPS module, or CAN bus.
+        // We simulate the speed, battery, and range changing over time.
+        // In a real car, read these from your sensors!
         // ---------------------------------------------------------
         currentSpeed++;
         if (currentSpeed > 180) {
            currentSpeed = 0;
         }
 
-        // Set the characteristic value (Sending 1 byte of data: uint8_t)
-        pCharacteristic->setValue(&currentSpeed, 1);
+        // Fake battery drain and range based on speed
+        int simulatedBattery = 100 - (currentSpeed / 4);
+        int simulatedRange = simulatedBattery * 4;
+
+        // Create a JSON payload: e.g. {"s": 120, "b": 83, "r": 320}
+        char payload[50];
+        snprintf(payload, sizeof(payload), "{\"s\":%d,\"b\":%d,\"r\":%d}", currentSpeed, simulatedBattery, simulatedRange);
+
+        // Set the characteristic value to the JSON string
+        pCharacteristic->setValue((uint8_t*)payload, strlen(payload));
         
         // Notify the browser that the data has changed
         pCharacteristic->notify();

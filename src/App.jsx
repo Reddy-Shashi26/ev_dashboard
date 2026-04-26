@@ -90,25 +90,27 @@ export default function App() {
     return () => clearInterval(alertInterval);
   }, [isSpeeding, isLowBattery]);
 
-  // Speed Simulation Effect based on Gear
+  // Speed Simulation Effect (Only runs if ESP32 is NOT connected)
   useEffect(() => {
     let interval;
-    if (gear === 'D') {
-      interval = setInterval(() => {
-        setSpeed((prev) => {
-          const targetCruisingSpeed = driveMode === 'ECO' ? 65 : driveMode === 'CITY' ? 85 : 130;
-          if (prev < targetCruisingSpeed - 10) return prev + (driveMode === 'SPORT' ? 3 : 1);
-          else if (prev > targetCruisingSpeed + 10) return prev - 2;
-          else return Math.max(0, prev + (Math.floor(Math.random() * 3) - 1));
-        });
-      }, 200);
-    } else {
-      interval = setInterval(() => {
-        setSpeed((prev) => (prev > 0 ? Math.max(0, prev - 3) : 0));
-      }, 100);
+    if (!isConnected) {
+      if (gear === 'D') {
+        interval = setInterval(() => {
+          setSpeed((prev) => {
+            const targetCruisingSpeed = driveMode === 'ECO' ? 65 : driveMode === 'CITY' ? 85 : 130;
+            if (prev < targetCruisingSpeed - 10) return prev + (driveMode === 'SPORT' ? 3 : 1);
+            else if (prev > targetCruisingSpeed + 10) return prev - 2;
+            else return Math.max(0, prev + (Math.floor(Math.random() * 3) - 1));
+          });
+        }, 200);
+      } else {
+        interval = setInterval(() => {
+          setSpeed((prev) => (prev > 0 ? Math.max(0, prev - 3) : 0));
+        }, 100);
+      }
     }
     return () => clearInterval(interval);
-  }, [gear, driveMode]);
+  }, [gear, driveMode, isConnected]);
 
   // Handle sounds on manual clicks
   const handleGearChange = (g) => {
@@ -140,7 +142,16 @@ export default function App() {
       const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
       await characteristic.startNotifications();
       characteristic.addEventListener('characteristicvaluechanged', (event) => {
-        // BLE integration logic
+        try {
+          const textDecoder = new TextDecoder('utf-8');
+          const jsonString = textDecoder.decode(event.target.value);
+          const data = JSON.parse(jsonString);
+          if (data.s !== undefined) setSpeed(data.s);
+          if (data.b !== undefined) setBattery(data.b);
+          if (data.r !== undefined) setRange(data.r);
+        } catch (err) {
+          console.error("Failed to parse BLE JSON:", err);
+        }
       });
       setIsConnected(true);
       device.addEventListener('gattserverdisconnected', () => setIsConnected(false));
