@@ -24,6 +24,7 @@ export default function App() {
   const [driveMode, setDriveMode] = useState('SPORT');
   const [currentTime, setCurrentTime] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
   
   // Turn Indicators State
   const [leftIndicator, setLeftIndicator] = useState(false);
@@ -55,6 +56,12 @@ export default function App() {
       }
       if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
         await window.screen.orientation.lock('landscape');
+      }
+      
+      if (!isConnected) {
+        const initVoice = new SpeechSynthesisUtterance("System online. Vehicle not connected.");
+        initVoice.rate = 0.95;
+        window.speechSynthesis.speak(initVoice);
       }
     } catch (e) {
       console.warn("Fullscreen/Orientation lock failed.", e);
@@ -171,7 +178,13 @@ export default function App() {
         window.speechSynthesis.speak(greeting);
       }, 1800); // 1.8 second delay so the engine hum peaks first
 
-      device.addEventListener('gattserverdisconnected', () => setIsConnected(false));
+      device.addEventListener('gattserverdisconnected', () => {
+        setIsConnected(false);
+        setIsSimulationMode(false);
+        const alertVoice = new SpeechSynthesisUtterance("Warning. Vehicle disconnected.");
+        alertVoice.rate = 0.95;
+        window.speechSynthesis.speak(alertVoice);
+      });
     } catch (error) {
       console.error('Bluetooth Connection failed!', error);
       // alert('Failed to connect. Error: ' + error.message); // Commented to prevent annoying popup during sound tests
@@ -212,8 +225,33 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#030303] text-white font-sans select-none overflow-hidden p-4 md:p-6 lg:p-8">
+    <div className="flex flex-col h-screen w-screen bg-[#030303] text-white font-sans select-none overflow-hidden p-4 md:p-6 lg:p-8 relative">
       
+      {/* Disconnected Overlay */}
+      {!isConnected && !isSimulationMode && (
+        <div className="absolute inset-0 z-40 bg-[#030303]/90 backdrop-blur-xl flex flex-col items-center justify-center">
+          <AlertTriangle className="w-24 h-24 text-red-500 mb-6 animate-pulse" />
+          <h2 className="text-5xl md:text-6xl font-bold text-white tracking-widest mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">VEHICLE DISCONNECTED</h2>
+          <p className="text-zinc-400 text-lg md:text-xl mb-12 tracking-wide">Please connect to the ESP32 hardware to receive telemetry data.</p>
+          
+          <div className="flex gap-6">
+            <button 
+              onClick={connectBLE}
+              className="bg-red-500/10 text-red-500 border border-red-500/50 hover:bg-red-500/20 px-8 py-4 rounded-full font-bold text-lg tracking-widest shadow-[0_0_30px_rgba(239,68,68,0.3)] transition-all flex items-center gap-3"
+            >
+              <Bluetooth className="w-6 h-6" />
+              CONNECT HARDWARE
+            </button>
+            <button 
+              onClick={() => setIsSimulationMode(true)}
+              className="bg-zinc-800/50 text-zinc-300 border border-zinc-600/50 hover:bg-zinc-700/50 px-8 py-4 rounded-full font-bold text-lg tracking-widest transition-all"
+            >
+              SIMULATION MODE
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Absolute Bluetooth Button */}
       <div className="absolute top-4 right-4 md:top-6 md:right-6 lg:top-8 lg:right-8 z-50">
         <button 
