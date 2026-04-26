@@ -78,7 +78,7 @@ export default function App() {
   }, [leftIndicator, rightIndicator]);
 
   // High Speed & Low Battery Alert Loop Effect
-  const isSpeeding = speed > 140;
+  const isSpeeding = speed > 50;
   const isLowBattery = battery <= 20;
   useEffect(() => {
     let alertInterval;
@@ -154,6 +154,13 @@ export default function App() {
         }
       });
       setIsConnected(true);
+      
+      // Personalized Voice Greeting
+      const greeting = new SpeechSynthesisUtterance("Hello Swastik, have a safe ride.");
+      greeting.rate = 0.9; // Slightly slower, more robotic/calm voice
+      greeting.pitch = 1.1;
+      window.speechSynthesis.speak(greeting);
+
       device.addEventListener('gattserverdisconnected', () => setIsConnected(false));
     } catch (error) {
       console.error('Bluetooth Connection failed!', error);
