@@ -23,7 +23,6 @@ export default function App() {
   const [driveMode, setDriveMode] = useState('SPORT');
   const [currentTime, setCurrentTime] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [scale, setScale] = useState(1);
 
   // Time effect
   useEffect(() => {
@@ -36,29 +35,13 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fullscreen, Orientation, and Scaling Effect
+  // Fullscreen and Orientation Effect
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    
-    const handleResize = () => {
-      // Calculate scale to fit 1280x720 perfectly in the window
-      const scaleX = window.innerWidth / 1280;
-      const scaleY = window.innerHeight / 720;
-      setScale(Math.min(scaleX, scaleY));
-    };
-
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    window.addEventListener('resize', handleResize);
-    
-    // Initial scale calculation
-    handleResize();
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   const launchDashboard = async () => {
@@ -144,216 +127,201 @@ export default function App() {
           <Maximize className="w-6 h-6" />
           LAUNCH FULLSCREEN
         </button>
-        <p className="mt-8 text-zinc-500 text-sm max-w-sm text-center px-4">
-          Browsers require user interaction to enter Fullscreen and lock orientation. For the perfect experience, tap launch.
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen w-full bg-[#030303] overflow-hidden fixed inset-0">
+    <div className="flex flex-col h-screen w-screen bg-[#030303] text-white font-sans select-none overflow-hidden p-4 md:p-6 lg:p-8">
       
-      {/* 1280x720 Fixed Container that mathematically scales to fit ANY screen perfectly */}
-      <div 
-        className="relative bg-[#030303] text-white font-sans select-none flex flex-col overflow-hidden"
-        style={{ 
-          width: '1280px', 
-          height: '720px', 
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center'
-        }}
-      >
-        
-        {/* Absolute Bluetooth Button */}
-        <div className="absolute top-8 right-8 z-50">
+      {/* Absolute Bluetooth Button */}
+      <div className="absolute top-4 right-4 md:top-6 md:right-6 lg:top-8 lg:right-8 z-50">
+        <button 
+          onClick={connectBLE}
+          className={`flex items-center gap-2 px-3 py-2 lg:px-4 lg:py-2 rounded-md font-bold text-xs md:text-sm transition-colors shadow-lg ${
+            isConnected 
+              ? 'bg-[#00ff9d]/20 text-[#00ff9d] border border-[#00ff9d]/50 hover:bg-[#00ff9d]/30' 
+              : 'bg-[#151515] border border-zinc-800/50 text-white hover:bg-[#252525]'
+          }`}
+        >
+          {isConnected ? <BluetoothConnected className="w-4 h-4" /> : <Bluetooth className="w-4 h-4" />}
+          {isConnected ? 'ESP32 Connected' : 'Connect BLE'}
+        </button>
+      </div>
+
+      {/* Top Bar */}
+      <div className="flex justify-between items-center mb-4 lg:mb-6 shrink-0 h-[10%]">
+        <div className="flex gap-4">
           <button 
-            onClick={connectBLE}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md font-bold text-sm transition-colors shadow-lg ${
-              isConnected 
-                ? 'bg-[#00ff9d]/20 text-[#00ff9d] border border-[#00ff9d]/50 hover:bg-[#00ff9d]/30' 
-                : 'bg-[#151515] border border-zinc-800/50 text-white hover:bg-[#252525]'
-            }`}
+            onClick={() => document.exitFullscreen()}
+            className="bg-[#151515] p-3 md:p-4 rounded-full hover:bg-[#222] transition-colors focus:outline-none flex items-center justify-center border border-zinc-800/30"
           >
-            {isConnected ? <BluetoothConnected className="w-4 h-4" /> : <Bluetooth className="w-4 h-4" />}
-            {isConnected ? 'ESP32 Connected' : 'Connect BLE'}
+            <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-zinc-500" />
+          </button>
+          <button className="bg-[#151515] p-3 md:p-4 rounded-full hover:bg-[#222] transition-colors focus:outline-none flex items-center justify-center border border-zinc-800/30">
+            <Sun className="w-5 h-5 lg:w-6 lg:h-6 text-zinc-500" />
           </button>
         </div>
+        
+        <div className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-widest font-mono text-white uppercase text-center flex-1">
+          {currentTime || '11:23 PM'}
+        </div>
+        
+        <div className="flex items-center gap-4 lg:gap-8 justify-end w-[150px] md:w-[200px]">
+          <span className="text-xl lg:text-2xl font-light text-zinc-400">24°C</span>
+          <button className="bg-[#151515] p-3 md:p-4 rounded-full hover:bg-[#222] transition-colors focus:outline-none flex items-center justify-center border border-zinc-800/30 mr-8 md:mr-24 lg:mr-32">
+            <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 text-zinc-500" />
+          </button>
+        </div>
+      </div>
 
-        {/* Top Bar (Height: ~100px with padding) */}
-        <div className="flex justify-between items-center px-8 pt-8 h-[100px]">
-          <div className="flex gap-6">
-            <button 
-              onClick={() => document.exitFullscreen()}
-              className="bg-[#151515] w-14 h-14 rounded-full hover:bg-[#222] transition-colors focus:outline-none flex items-center justify-center border border-zinc-800/30"
-            >
-              <ArrowLeft className="w-6 h-6 text-zinc-500" />
-            </button>
-            <button className="bg-[#151515] w-14 h-14 rounded-full hover:bg-[#222] transition-colors focus:outline-none flex items-center justify-center border border-zinc-800/30">
-              <Sun className="w-6 h-6 text-zinc-500" />
-            </button>
+      {/* Main Content */}
+      <div className="flex-grow flex justify-between items-stretch gap-4 md:gap-6 lg:gap-8 h-[85%]">
+        
+        {/* Left Column */}
+        <div className="w-[28%] flex flex-col justify-between">
+          <div className="bg-[#111111] rounded-[2rem] p-5 lg:p-8 flex flex-col justify-between shadow-2xl relative flex-grow border border-zinc-800/30">
+            <div className="flex justify-between items-center w-full">
+              <span className="text-zinc-500 font-medium tracking-[0.2em] text-xs lg:text-sm">BATTERY</span>
+              <span className="text-[#00ff9d] font-bold text-xl lg:text-3xl">{battery}%</span>
+            </div>
+            
+            <div className="w-full h-2 lg:h-3 bg-[#222] rounded-full overflow-hidden my-4 lg:my-6">
+              <div 
+                className="h-full bg-[#00ff9d] rounded-full shadow-[0_0_15px_#00ff9d] transition-all duration-500"
+                style={{ width: `${battery}%` }}
+              ></div>
+            </div>
+
+            <div className="flex flex-col items-center justify-center mt-auto">
+              <span className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white drop-shadow-md">{range}</span>
+              <span className="text-zinc-600 font-semibold tracking-[0.2em] text-[10px] lg:text-xs mt-2">KM RANGE</span>
+            </div>
           </div>
-          
-          <div className="text-4xl font-bold tracking-widest font-mono text-white uppercase ml-14">
-            {currentTime || '11:23 PM'}
-          </div>
-          
-          <div className="flex items-center gap-8 mr-[180px]">
-            <span className="text-2xl font-light text-zinc-400">24°C</span>
-            <button className="bg-[#151515] w-14 h-14 rounded-full hover:bg-[#222] transition-colors focus:outline-none flex items-center justify-center border border-zinc-800/30">
-              <ArrowRight className="w-6 h-6 text-zinc-500" />
+
+          <div className="flex gap-4 h-[18%] mt-4">
+            <button className="bg-[#151515] hover:bg-[#252525] rounded-[1.5rem] flex-grow flex items-center justify-center gap-2 lg:gap-3 transition-colors shadow-lg border border-zinc-800/30 active:scale-95">
+              <Zap className="w-5 h-5 lg:w-7 lg:h-7 text-orange-500 fill-orange-500" />
+              <span className="font-bold text-xs lg:text-sm tracking-widest text-white">CHARGE</span>
+            </button>
+            <button className="bg-[#151515] hover:bg-[#252525] rounded-[1.5rem] aspect-square flex items-center justify-center transition-colors shadow-lg border border-zinc-800/30 active:scale-95">
+              <AlertTriangle className="w-6 h-6 lg:w-8 lg:h-8 text-orange-400 fill-orange-400/20" />
             </button>
           </div>
         </div>
 
-        {/* Main Content (Height: 620px) */}
-        <div className="flex-grow flex justify-between items-stretch px-8 pb-8 pt-2 gap-8">
-          
-          {/* Left Column (Width: 320px) */}
-          <div className="w-[320px] flex flex-col gap-6 pt-4">
-            <div className="bg-[#111111] rounded-[2rem] p-8 flex flex-col justify-between shadow-2xl relative h-[280px] border border-zinc-800/30">
-              <div className="flex justify-between items-center w-full">
-                <span className="text-zinc-500 font-medium tracking-[0.2em] text-sm">BATTERY</span>
-                <span className="text-[#00ff9d] font-bold text-3xl">{battery}%</span>
-              </div>
+        {/* Center Column */}
+        <div className="w-[44%] flex flex-col items-center justify-center relative h-full">
+          <div className="relative w-full aspect-square max-h-full flex items-center justify-center -mt-8 lg:-mt-12">
+            <svg className="absolute inset-0 w-full h-full drop-shadow-2xl" viewBox="0 0 100 100" style={{ filter: `drop-shadow(0px 0px 15px ${accentColor}60)` }}>
+              <path d="M 20 80 A 45 45 0 1 1 80 80" fill="none" stroke="#111111" strokeWidth="6" strokeLinecap="round" />
+              <path
+                d="M 20 80 A 45 45 0 1 1 80 80"
+                fill="none"
+                stroke={accentColor}
+                strokeWidth="6"
+                strokeLinecap="round"
+                pathLength="100"
+                strokeDasharray="100"
+                strokeDashoffset={dashOffset}
+                className="transition-all duration-300 ease-linear"
+              />
+            </svg>
+            
+            <div className="flex flex-col items-center justify-center z-10 mt-6 md:mt-10 lg:mt-12">
+              <span className="text-[80px] md:text-[110px] lg:text-[140px] leading-none font-bold tracking-tighter text-white drop-shadow-lg transition-all duration-300">
+                {speed}
+              </span>
+              <span className="text-zinc-500 font-semibold tracking-[0.2em] text-[10px] lg:text-sm mt-2 lg:mt-4">KM / H</span>
               
-              <div className="w-full h-3 bg-[#222] rounded-full overflow-hidden mt-6 mb-8">
-                <div 
-                  className="h-full bg-[#00ff9d] rounded-full shadow-[0_0_15px_#00ff9d] transition-all duration-500"
-                  style={{ width: `${battery}%` }}
-                ></div>
-              </div>
-
-              <div className="flex flex-col items-center justify-center mt-auto pb-2">
-                <span className="text-6xl font-bold tracking-tight text-white drop-shadow-md">{range}</span>
-                <span className="text-zinc-600 font-semibold tracking-[0.2em] text-xs mt-3">KM RANGE</span>
-              </div>
-            </div>
-
-            <div className="flex gap-4 h-[90px]">
-              <button className="bg-[#151515] hover:bg-[#252525] rounded-[1.5rem] flex-grow flex items-center justify-center gap-3 transition-colors shadow-lg border border-zinc-800/30 active:scale-95">
-                <Zap className="w-7 h-7 text-orange-500 fill-orange-500" />
-                <span className="font-bold text-sm tracking-widest text-white">CHARGE</span>
-              </button>
-              <button className="bg-[#151515] hover:bg-[#252525] rounded-[1.5rem] w-[90px] flex items-center justify-center transition-colors shadow-lg border border-zinc-800/30 active:scale-95">
-                <AlertTriangle className="w-8 h-8 text-orange-400 fill-orange-400/20" />
-              </button>
-            </div>
-          </div>
-
-          {/* Center Column (Width: 500px) */}
-          <div className="w-[500px] flex flex-col items-center justify-center relative">
-            <div className="relative w-[500px] h-[500px] flex items-center justify-center -mt-16">
-              <svg className="absolute inset-0 w-full h-full drop-shadow-2xl" viewBox="0 0 100 100" style={{ filter: `drop-shadow(0px 0px 20px ${accentColor}60)` }}>
-                <path d="M 20 80 A 45 45 0 1 1 80 80" fill="none" stroke="#111111" strokeWidth="6" strokeLinecap="round" />
-                <path
-                  d="M 20 80 A 45 45 0 1 1 80 80"
-                  fill="none"
-                  stroke={accentColor}
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  pathLength="100"
-                  strokeDasharray="100"
-                  strokeDashoffset={dashOffset}
-                  className="transition-all duration-300 ease-linear"
-                />
-              </svg>
-              
-              <div className="flex flex-col items-center justify-center z-10 mt-12">
-                <span className="text-[150px] leading-none font-bold tracking-tighter text-white drop-shadow-lg transition-all duration-300">
-                  {speed}
-                </span>
-                <span className="text-zinc-500 font-semibold tracking-[0.2em] text-sm mt-4">KM / H</span>
-                
-                <div className="mt-8 flex items-center justify-center">
-                  <span 
-                    className="text-5xl font-black text-transparent bg-clip-text transition-colors duration-300" 
-                    style={{ 
-                      backgroundImage: `linear-gradient(to bottom, ${accentColor}, ${accentColor})`,
-                      WebkitTextStroke: `1px ${accentColor}`,
-                      filter: `drop-shadow(0px 0px 12px ${accentColor})`
-                    }}
-                  >
-                    {gear}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#0a0a0a] rounded-full px-12 py-5 flex gap-12 items-center shadow-2xl absolute bottom-6 border border-zinc-800/40">
-              {['P', 'R', 'N', 'D'].map((g) => (
+              <div className="mt-4 lg:mt-8 flex items-center justify-center">
                 <span 
-                  key={g}
-                  onClick={() => setGear(g)}
-                  className={`text-3xl font-bold cursor-pointer transition-colors ${
-                    gear === g 
-                      ? 'text-white font-black drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110' 
-                      : 'text-zinc-600 hover:text-zinc-400'
-                  }`}
+                  className="text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text transition-colors duration-300" 
+                  style={{ 
+                    backgroundImage: `linear-gradient(to bottom, ${accentColor}, ${accentColor})`,
+                    WebkitTextStroke: `1px ${accentColor}`,
+                    filter: `drop-shadow(0px 0px 10px ${accentColor})`
+                  }}
                 >
-                  {g}
+                  {gear}
                 </span>
-              ))}
+              </div>
             </div>
           </div>
 
-          {/* Right Column (Width: 320px) */}
-          <div className="w-[320px] flex flex-col gap-6 pt-4">
-            <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative h-[240px] flex flex-col border border-zinc-800/30 overflow-hidden">
-              <div className="absolute inset-0 bg-grid opacity-60" style={{ transform: 'perspective(500px) rotateX(45deg) scale(1.5)', transformOrigin: 'top' }}></div>
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#111111] z-0"></div>
+          <div className="bg-[#0a0a0a] rounded-full px-6 md:px-10 lg:px-12 py-3 lg:py-5 flex gap-6 md:gap-10 lg:gap-12 items-center shadow-2xl absolute bottom-0 border border-zinc-800/40">
+            {['P', 'R', 'N', 'D'].map((g) => (
+              <span 
+                key={g}
+                onClick={() => setGear(g)}
+                className={`text-xl lg:text-3xl font-bold cursor-pointer transition-colors ${
+                  gear === g 
+                    ? 'text-white font-black drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110' 
+                    : 'text-zinc-600 hover:text-zinc-400'
+                }`}
+              >
+                {g}
+              </span>
+            ))}
+          </div>
+        </div>
 
-              <div className="p-6 flex justify-between items-start z-10 w-full relative">
-                <div className="flex items-center gap-3">
-                  <CornerUpLeft className="w-7 h-7 text-[#00e5ff]" strokeWidth={3} />
-                  <span className="font-bold text-2xl text-white drop-shadow-md">200m</span>
+        {/* Right Column */}
+        <div className="w-[28%] flex flex-col justify-between">
+          <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative flex-grow-[2] flex flex-col border border-zinc-800/30 overflow-hidden mb-4">
+            <div className="absolute inset-0 bg-grid opacity-60" style={{ transform: 'perspective(500px) rotateX(45deg) scale(1.5)', transformOrigin: 'top' }}></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#111111] z-0"></div>
+
+            <div className="p-4 lg:p-6 flex justify-between items-start z-10 w-full relative">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <CornerUpLeft className="w-5 h-5 lg:w-7 lg:h-7 text-[#00e5ff]" strokeWidth={3} />
+                <span className="font-bold text-xl lg:text-2xl text-white drop-shadow-md">200m</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[#00ff9d] font-bold text-lg lg:text-xl drop-shadow-[0_0_5px_rgba(0,255,157,0.3)]">12 min</span>
+                <span className="text-zinc-500 font-medium text-xs lg:text-sm mt-1">5.4 km</span>
+              </div>
+            </div>
+            
+            <div className="absolute inset-x-0 bottom-6 lg:bottom-10 flex flex-col items-center justify-end z-10 pointer-events-none">
+              <div className="w-1 h-12 lg:h-20 bg-[#00e5ff] shadow-[0_0_15px_#00e5ff] relative">
+                <div className="absolute -top-4 -left-[10px] lg:-top-6 lg:-left-[14px]">
+                  <Navigation className="w-6 h-6 lg:w-8 lg:h-8 text-white fill-white transform rotate-45 drop-shadow-lg" />
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[#00ff9d] font-bold text-xl drop-shadow-[0_0_5px_rgba(0,255,157,0.3)]">12 min</span>
-                  <span className="text-zinc-500 font-medium text-sm mt-1">5.4 km</span>
-                </div>
-              </div>
-              
-              <div className="absolute inset-x-0 bottom-10 flex flex-col items-center justify-end z-10 pointer-events-none">
-                <div className="w-1 h-20 bg-[#00e5ff] shadow-[0_0_15px_#00e5ff] relative">
-                  <div className="absolute -top-6 -left-[14px]">
-                    <Navigation className="w-8 h-8 text-white fill-white transform rotate-45 drop-shadow-lg" />
-                  </div>
-                </div>
               </div>
             </div>
+          </div>
 
-            <div className="bg-[#111111] rounded-[2rem] shadow-2xl p-5 flex items-center gap-6 border border-zinc-800/30 h-[90px]">
-              <div className="pl-4">
-                <Music className="w-8 h-8 text-[#00e5ff]" strokeWidth={2.5} />
-              </div>
-              <div className="flex flex-col justify-center">
-                <span className="font-bold text-xl text-white tracking-wide">Nightcall</span>
-                <span className="text-zinc-500 font-medium text-sm">Kavinsky</span>
-              </div>
+          <div className="bg-[#111111] rounded-[2rem] shadow-2xl p-4 lg:p-5 flex items-center gap-4 lg:gap-6 border border-zinc-800/30 flex-grow mb-4">
+            <div className="pl-2 lg:pl-4">
+              <Music className="w-6 h-6 lg:w-8 lg:h-8 text-[#00e5ff]" strokeWidth={2.5} />
             </div>
+            <div className="flex flex-col justify-center">
+              <span className="font-bold text-base lg:text-xl text-white tracking-wide">Nightcall</span>
+              <span className="text-zinc-500 font-medium text-[10px] lg:text-sm">Kavinsky</span>
+            </div>
+          </div>
 
-            <div className="bg-[#111111] rounded-[2rem] shadow-2xl p-6 flex justify-between items-center border border-zinc-800/30 h-[80px]">
-              <span className="text-zinc-500 font-medium tracking-[0.2em] text-sm pl-2">TRIP A</span>
-              <span className="font-bold text-2xl text-white pr-2">142.5 km</span>
-            </div>
+          <div className="bg-[#111111] rounded-[2rem] shadow-2xl p-4 lg:p-6 flex justify-between items-center border border-zinc-800/30 flex-grow mb-4">
+            <span className="text-zinc-500 font-medium tracking-[0.2em] text-[10px] lg:text-sm pl-2">TRIP A</span>
+            <span className="font-bold text-lg lg:text-2xl text-white pr-2">142.5 km</span>
+          </div>
 
-            <div className="bg-[#0a0a0a] rounded-full shadow-2xl p-2 flex mt-auto border border-zinc-800/40">
-              {['ECO', 'CITY', 'SPORT'].map((mode) => (
-                <button 
-                  key={mode}
-                  onClick={() => setDriveMode(mode)}
-                  className={`flex-1 py-4 rounded-full font-semibold text-sm tracking-[0.2em] transition-all duration-300 focus:outline-none ${
-                    driveMode === mode 
-                      ? `text-white shadow-[0_0_20px_${getModeColor()}80]` 
-                      : 'text-zinc-500 hover:text-white'
-                  }`}
-                  style={{ backgroundColor: driveMode === mode ? getModeColor() : 'transparent' }}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
+          <div className="bg-[#0a0a0a] rounded-full shadow-2xl p-1.5 lg:p-2 flex border border-zinc-800/40 h-[12%]">
+            {['ECO', 'CITY', 'SPORT'].map((mode) => (
+              <button 
+                key={mode}
+                onClick={() => setDriveMode(mode)}
+                className={`flex-1 rounded-full font-semibold text-[10px] lg:text-sm tracking-[0.2em] transition-all duration-300 focus:outline-none flex items-center justify-center ${
+                  driveMode === mode 
+                    ? `text-white shadow-[0_0_15px_${getModeColor()}80]` 
+                    : 'text-zinc-500 hover:text-white'
+                }`}
+                style={{ backgroundColor: driveMode === mode ? getModeColor() : 'transparent' }}
+              >
+                {mode}
+              </button>
+            ))}
           </div>
         </div>
       </div>
