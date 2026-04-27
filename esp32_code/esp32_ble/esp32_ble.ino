@@ -4,6 +4,7 @@
 #include <BLE2902.h>
 #include <TinyGPSPlus.h>
 #include <HardwareSerial.h>
+#include <Preferences.h>
 
 // ================== BLE SETUP ==================
 BLEServer* pServer = NULL;
@@ -21,6 +22,11 @@ HardwareSerial gpsSerial(2); // Use UART2 (RX=16, TX=17 on ESP32)
 float currentLat = 17.390555;
 float currentLng = 78.321944;
 int currentHeading = 0;
+
+// ================== BATTERY SIMULATION ==================
+Preferences preferences;
+float currentBattery = 80.0; // 40V on a 42V max system is approx 80%
+int lastSavedBattery = 80;
 
 // ================== HALL SENSOR ==================
 const int HALL_A_PIN = 34;
@@ -80,6 +86,14 @@ void setup() {
   gpsSerial.begin(9600, SERIAL_8N1, 16, 17); // Most GPS modules use 9600 baud rate. RX=16, TX=17
   Serial.println("GPS Serial Started on RX=16, TX=17");
 
+  // Battery memory init
+  preferences.begin("ev_dash", false); // Open NVS namespace
+  // UNCOMMENT the line below and re-upload if you ever want to force reset the battery to 100% after charging!
+  // preferences.putFloat("batt", 100.0); 
+  currentBattery = preferences.getFloat("batt", 80.0);
+  lastSavedBattery = (int)currentBattery;
+  Serial.printf("Loaded Battery from Memory: %d%%\n", lastSavedBattery);
+
   // BLE init
   BLEDevice::init("EV Bicycle");
   pServer = BLEDevice::createServer();
@@ -131,10 +145,24 @@ void loop() {
     // Clean up small noise (if speed is < 1km/h, show 0)
     if (speed < 1.0) speed = 0;
 
-    // ================== OPTIONAL: BATTERY + RANGE ==================
-    // Replace later with real ADC voltage sensor
-    int battery = 85;  
-    int range = battery * 0.4;  
+    // ================== BATTERY SIMULATION ==================
+    // Drain battery based on speed. Faster speed = faster drain.
+    // At 25 km/h, it will drop exactly 1% every ~3.5 minutes of continuous riding.
+    if (speed > 5.0) {
+      float drainRate = (speed / 25.0) * 0.0045; // 0.0045% per second
+      currentBattery -= drainRate;
+      if (currentBattery < 0) currentBattery = 0;
+
+      // Save to flash memory ONLY when it drops by a full 1% (prevents wearing out flash memory)
+      if ((int)currentBattery < lastSavedBattery) {
+         lastSavedBattery = (int)currentBattery;
+         preferences.putFloat("batt", currentBattery);
+         Serial.printf("Battery dropped. Saved to memory: %d%%\n", lastSavedBattery);
+      }
+    }
+
+    int battery = (int)currentBattery;  
+    int range = battery * 0.25;  
 
     // ================== DEBUG ==================
     Serial.printf("Pulses: %lu | Speed: %.2f km/h | GPS: %.4f, %.4f\n", count, speed, currentLat, currentLng);
