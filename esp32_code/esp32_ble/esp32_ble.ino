@@ -72,6 +72,21 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 };
 
+class MyCharacteristicCallbacks : public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) {
+      std::string rxValue = pCharacteristic->getValue();
+      if (rxValue.length() > 0) {
+        String command = String(rxValue.c_str());
+        if (command.indexOf("RESET_BATT") != -1) {
+          currentBattery = 80.0;
+          lastSavedBattery = 80;
+          preferences.putFloat("batt", 80.0);
+          Serial.println("Battery Force-Reset to 80% via Dashboard Button!");
+        }
+      }
+    }
+};
+
 // ================== SETUP ==================
 void setup() {
   Serial.begin(115200);
@@ -102,10 +117,12 @@ void setup() {
   pCharacteristic = pService->createCharacteristic(
                       CHARACTERISTIC_UUID,
                       BLECharacteristic::PROPERTY_READ |
-                      BLECharacteristic::PROPERTY_NOTIFY
+                      BLECharacteristic::PROPERTY_NOTIFY |
+                      BLECharacteristic::PROPERTY_WRITE
                     );
 
   pCharacteristic->addDescriptor(new BLE2902());
+  pCharacteristic->setCallbacks(new MyCharacteristicCallbacks());
 
   pService->start();
 
@@ -145,9 +162,9 @@ void loop() {
 
     // ================== BATTERY SIMULATION ==================
     // Drain battery based on speed. Faster speed = faster drain.
-    // At 25 km/h, it will drop exactly 1% every ~3.5 minutes of continuous riding.
-    if (speed > 5.0) {
-      float drainRate = (speed / 25.0) * 0.0045; // 0.0045% per second
+    // At 25 km/h, it will drop exactly 1% every ~1.5 minutes of continuous riding.
+    if (speed >= 1.0) { // Drain as long as speed is > 1km/h
+      float drainRate = (speed / 25.0) * 0.0111; // 0.0111% per second
       currentBattery -= drainRate;
       if (currentBattery < 0) currentBattery = 0;
 

@@ -47,6 +47,7 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [isLightTheme, setIsLightTheme] = useState(false);
+  const [bleCharacteristic, setBleCharacteristic] = useState(null);
   
   // GPS State (Default 17°23'26"N 78°19'19"E)
   const [gpsData, setGpsData] = useState({ lat: 17.390555, lng: 78.321944, heading: 0 });
@@ -172,6 +173,7 @@ export default function App() {
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(SERVICE_UUID);
       const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+      setBleCharacteristic(characteristic);
       await characteristic.startNotifications();
       characteristic.addEventListener('characteristicvaluechanged', (event) => {
         try {
@@ -371,13 +373,27 @@ export default function App() {
             >
               {isLightTheme ? <Moon className="w-6 h-6 lg:w-8 lg:h-8 text-zinc-500" /> : <Sun className="w-6 h-6 lg:w-8 lg:h-8 text-amber-400" />}
             </button>
-            {/* Battery Test Button to Trigger Alert */}
+            {/* Battery Reset Button */}
             <button 
-              onClick={() => setBattery(b => b > 10 ? b - 15 : 83)} 
+              onClick={async () => {
+                if (bleCharacteristic) {
+                  try {
+                    const encoder = new TextEncoder();
+                    await bleCharacteristic.writeValue(encoder.encode("RESET_BATT"));
+                    setBattery(80);
+                  } catch (e) {
+                    console.error("BLE Write failed", e);
+                  }
+                } else if (isSimulationMode) {
+                  setBattery(80);
+                } else {
+                  setBattery(80); // Fallback for testing UI visually without BLE
+                }
+              }} 
               className={`${isLightTheme ? 'bg-white hover:bg-zinc-50 border-zinc-200' : 'bg-[#151515] hover:bg-[#252525] border-zinc-800/30'} rounded-[1.5rem] flex-grow flex items-center justify-center gap-2 lg:gap-3 transition-colors shadow-lg border active:scale-95`}
             >
               <Zap className={`w-5 h-5 lg:w-7 lg:h-7 ${isLowBattery ? 'text-red-500 fill-red-500' : 'text-orange-500 fill-orange-500'}`} />
-              <span className={`font-bold text-xs lg:text-sm tracking-widest ${isLightTheme ? 'text-zinc-800' : 'text-white'}`}>TEST BATT</span>
+              <span className={`font-bold text-xs lg:text-sm tracking-widest ${isLightTheme ? 'text-zinc-800' : 'text-white'}`}>RESET BATT</span>
             </button>
             <button 
               onClick={() => { document.exitFullscreen(); }} 
