@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Sun, 
+  Moon,
   Zap, 
   AlertTriangle, 
   CornerUpLeft,
@@ -45,6 +46,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
+  const [isLightTheme, setIsLightTheme] = useState(false);
   
   // GPS State (Default 17°23'26"N 78°19'19"E)
   const [gpsData, setGpsData] = useState({ lat: 17.390555, lng: 78.321944, heading: 0 });
@@ -251,7 +253,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#030303] text-white font-sans select-none overflow-hidden p-4 md:p-6 lg:p-8 relative">
+    <div className={`flex flex-col h-screen w-screen ${isLightTheme ? 'bg-[#f4f4f5]' : 'bg-[#030303]'} font-sans select-none overflow-hidden p-4 md:p-6 lg:p-8 relative transition-colors duration-500`}>
       
       {/* Disconnected Overlay */}
       {!isConnected && !isSimulationMode && (
@@ -314,7 +316,7 @@ export default function App() {
         </div>
         
         {/* Time */}
-        <div className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-widest font-mono text-white uppercase text-center absolute left-1/2 transform -translate-x-1/2">
+        <div className={`text-2xl md:text-3xl lg:text-4xl font-bold tracking-widest font-mono uppercase text-center absolute left-1/2 transform -translate-x-1/2 ${isLightTheme ? 'text-zinc-800' : 'text-white'}`}>
           {currentTime || '11:23 PM'}
         </div>
         
@@ -342,13 +344,13 @@ export default function App() {
         
         {/* Left Column */}
         <div className="w-[28%] flex flex-col justify-between">
-          <div className={`bg-[#111111] rounded-[2rem] p-5 lg:p-8 flex flex-col justify-between shadow-2xl relative flex-grow border ${isLowBattery ? 'border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.2)]' : 'border-zinc-800/30'} transition-colors duration-300`}>
+          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#111111] border-zinc-800/30'} rounded-[2rem] p-5 lg:p-8 flex flex-col justify-between shadow-2xl relative flex-grow border ${isLowBattery ? (isLightTheme ? 'border-red-400 shadow-[0_0_20px_rgba(255,0,0,0.1)]' : 'border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.2)]') : ''} transition-colors duration-300`}>
             <div className="flex justify-between items-center w-full">
               <span className={`font-medium tracking-[0.2em] text-xs lg:text-sm ${isLowBattery ? 'text-red-500' : 'text-zinc-500'}`}>BATTERY</span>
               <span className={`font-bold text-xl lg:text-3xl ${isLowBattery ? 'text-red-500' : 'text-[#00ff9d]'}`}>{battery}%</span>
             </div>
             
-            <div className="w-full h-2 lg:h-3 bg-[#222] rounded-full overflow-hidden my-4 lg:my-6">
+            <div className={`w-full h-2 lg:h-3 ${isLightTheme ? 'bg-zinc-100' : 'bg-[#222]'} rounded-full overflow-hidden my-4 lg:my-6`}>
               <div 
                 className={`h-full rounded-full transition-all duration-500 ${isLowBattery ? 'bg-red-500 shadow-[0_0_15px_#ef4444]' : 'bg-[#00ff9d] shadow-[0_0_15px_#00ff9d]'}`}
                 style={{ width: `${battery}%` }}
@@ -356,23 +358,30 @@ export default function App() {
             </div>
 
             <div className="flex flex-col items-center justify-center mt-auto">
-              <span className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white drop-shadow-md">{range}</span>
-              <span className="text-zinc-600 font-semibold tracking-[0.2em] text-[10px] lg:text-xs mt-2">KM RANGE</span>
+              <span className={`text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight drop-shadow-md ${isLightTheme ? 'text-zinc-800' : 'text-white'}`}>{range}</span>
+              <span className="text-zinc-500 font-semibold tracking-[0.2em] text-[10px] lg:text-xs mt-2">KM RANGE</span>
             </div>
           </div>
 
           <div className="flex gap-4 h-[18%] mt-4">
+            {/* Theme Toggle Button */}
+            <button 
+              onClick={() => setIsLightTheme(!isLightTheme)} 
+              className={`${isLightTheme ? 'bg-white hover:bg-zinc-50 border-zinc-200' : 'bg-[#151515] hover:bg-[#252525] border-zinc-800/30'} rounded-[1.5rem] aspect-square flex items-center justify-center transition-colors shadow-lg border active:scale-95`}
+            >
+              {isLightTheme ? <Moon className="w-6 h-6 lg:w-8 lg:h-8 text-zinc-500" /> : <Sun className="w-6 h-6 lg:w-8 lg:h-8 text-amber-400" />}
+            </button>
             {/* Battery Test Button to Trigger Alert */}
             <button 
               onClick={() => setBattery(b => b > 10 ? b - 15 : 83)} 
-              className="bg-[#151515] hover:bg-[#252525] rounded-[1.5rem] flex-grow flex items-center justify-center gap-2 lg:gap-3 transition-colors shadow-lg border border-zinc-800/30 active:scale-95"
+              className={`${isLightTheme ? 'bg-white hover:bg-zinc-50 border-zinc-200' : 'bg-[#151515] hover:bg-[#252525] border-zinc-800/30'} rounded-[1.5rem] flex-grow flex items-center justify-center gap-2 lg:gap-3 transition-colors shadow-lg border active:scale-95`}
             >
               <Zap className={`w-5 h-5 lg:w-7 lg:h-7 ${isLowBattery ? 'text-red-500 fill-red-500' : 'text-orange-500 fill-orange-500'}`} />
-              <span className="font-bold text-xs lg:text-sm tracking-widest text-white">TEST BATT</span>
+              <span className={`font-bold text-xs lg:text-sm tracking-widest ${isLightTheme ? 'text-zinc-800' : 'text-white'}`}>TEST BATT</span>
             </button>
             <button 
               onClick={() => { document.exitFullscreen(); }} 
-              className="bg-[#151515] hover:bg-[#252525] rounded-[1.5rem] aspect-square flex items-center justify-center transition-colors shadow-lg border border-zinc-800/30 active:scale-95"
+              className={`${isLightTheme ? 'bg-white hover:bg-zinc-50 border-zinc-200' : 'bg-[#151515] hover:bg-[#252525] border-zinc-800/30'} rounded-[1.5rem] aspect-square flex items-center justify-center transition-colors shadow-lg border active:scale-95`}
             >
               <AlertTriangle className="w-6 h-6 lg:w-8 lg:h-8 text-orange-400 fill-orange-400/20" />
             </button>
@@ -398,7 +407,7 @@ export default function App() {
             </svg>
             
             <div className="flex flex-col items-center justify-center z-10 mt-6 md:mt-10 lg:mt-12">
-              <span className={`text-[80px] md:text-[110px] lg:text-[140px] leading-none font-bold tracking-tighter drop-shadow-lg transition-colors duration-300 ${isSpeeding ? 'text-red-500' : 'text-white'}`}>
+              <span className={`text-[80px] md:text-[110px] lg:text-[140px] leading-none font-bold tracking-tighter drop-shadow-lg transition-colors duration-300 ${isSpeeding ? 'text-red-500' : (isLightTheme ? 'text-zinc-900' : 'text-white')}`}>
                 {speed}
               </span>
               <span className="text-zinc-500 font-semibold tracking-[0.2em] text-[10px] lg:text-sm mt-2 lg:mt-4">
@@ -420,15 +429,15 @@ export default function App() {
             </div>
           </div>
 
-          <div className="bg-[#0a0a0a] rounded-full px-6 md:px-10 lg:px-12 py-3 lg:py-5 flex gap-6 md:gap-10 lg:gap-12 items-center shadow-2xl absolute bottom-0 border border-zinc-800/40">
+          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#0a0a0a] border-zinc-800/40'} rounded-full px-6 md:px-10 lg:px-12 py-3 lg:py-5 flex gap-6 md:gap-10 lg:gap-12 items-center shadow-2xl absolute bottom-0 border`}>
             {['P', 'R', 'N', 'D'].map((g) => (
               <span 
                 key={g}
                 onClick={() => handleGearChange(g)}
                 className={`text-xl lg:text-3xl font-bold cursor-pointer transition-colors ${
                   gear === g 
-                    ? 'text-white font-black drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110' 
-                    : 'text-zinc-600 hover:text-zinc-400'
+                    ? (isLightTheme ? 'text-zinc-900 font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.1)] scale-110' : 'text-white font-black drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110')
+                    : 'text-zinc-400 hover:text-zinc-600'
                 }`}
               >
                 {g}
@@ -441,16 +450,16 @@ export default function App() {
         <div className="w-[28%] flex flex-col justify-between h-full">
           
           {/* Huge GPS Map */}
-          <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative flex-grow flex flex-col border border-zinc-800/30 overflow-hidden mb-4 lg:mb-6 z-0">
+          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#111111] border-zinc-800/30'} rounded-[2rem] shadow-2xl relative flex-grow flex flex-col border overflow-hidden mb-4 lg:mb-6 z-0 transition-colors duration-300`}>
             <MapContainer center={[gpsData.lat, gpsData.lng]} zoom={16} className="absolute inset-0 z-0" zoomControl={false} attributionControl={false}>
               <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                url={isLightTheme ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
               />
               <MapUpdater center={[gpsData.lat, gpsData.lng]} />
               <Marker position={[gpsData.lat, gpsData.lng]} icon={createNavIcon(gpsData.heading)} />
             </MapContainer>
             
-            <div className="absolute top-4 right-4 z-10 flex flex-col items-end bg-[#0a0a0a]/80 p-2 lg:p-3 rounded-xl backdrop-blur-md border border-zinc-800/50">
+            <div className={`absolute top-4 right-4 z-10 flex flex-col items-end ${isLightTheme ? 'bg-white/80 border-zinc-200' : 'bg-[#0a0a0a]/80 border-zinc-800/50'} p-2 lg:p-3 rounded-xl backdrop-blur-md border`}>
               <div className="flex items-center gap-2">
                 <Navigation className="w-5 h-5 text-[#00e5ff]" />
                 <span className="text-[#00e5ff] font-bold text-sm lg:text-lg drop-shadow-[0_0_5px_rgba(0,229,255,0.3)]">GPS LIVE</span>
@@ -460,7 +469,7 @@ export default function App() {
           </div>
 
           {/* Expanded Drive Modes */}
-          <div className="bg-[#0a0a0a] rounded-full shadow-2xl p-2 lg:p-3 flex border border-zinc-800/40 h-[15%] lg:h-[18%] shrink-0">
+          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#0a0a0a] border-zinc-800/40'} rounded-full shadow-2xl p-2 lg:p-3 flex border h-[15%] lg:h-[18%] shrink-0 transition-colors duration-300`}>
             {['ECO', 'CITY', 'SPORT'].map((mode) => (
               <button 
                 key={mode}
@@ -468,7 +477,7 @@ export default function App() {
                 className={`flex-1 rounded-full font-bold text-xs md:text-sm lg:text-lg tracking-[0.2em] transition-all duration-300 focus:outline-none flex items-center justify-center ${
                   driveMode === mode 
                     ? `text-white shadow-[0_0_20px_${getModeColor()}80]` 
-                    : 'text-zinc-500 hover:text-white'
+                    : (isLightTheme ? 'text-zinc-400 hover:text-zinc-600' : 'text-zinc-500 hover:text-white')
                 }`}
                 style={{ backgroundColor: driveMode === mode ? getModeColor() : 'transparent' }}
               >
