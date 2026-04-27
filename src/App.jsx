@@ -13,6 +13,26 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { playGearSound, playModeSound, playAlertSound, playIndicatorSound, playBikeStartupSound } from './sounds';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import L from 'leaflet';
+
+const createNavIcon = (heading) => {
+  return L.divIcon({
+    className: 'custom-nav-icon',
+    html: `<div style="transform: rotate(${heading}deg); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(0, 229, 255, 0.2); border: 2px solid #00e5ff; border-radius: 50%; box-shadow: 0 0 15px rgba(0,229,255,0.6);"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#00e5ff" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+};
+
+function MapUpdater({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+  return null;
+}
 
 export default function App() {
   // Application State
@@ -25,6 +45,9 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
+  
+  // GPS State (Default Hyderabad, India)
+  const [gpsData, setGpsData] = useState({ lat: 17.3850, lng: 78.4867, heading: 0 });
   
   // Turn Indicators State
   const [leftIndicator, setLeftIndicator] = useState(false);
@@ -156,6 +179,9 @@ export default function App() {
           if (data.s !== undefined) setSpeed(data.s);
           if (data.b !== undefined) setBattery(data.b);
           if (data.r !== undefined) setRange(data.r);
+          if (data.lat !== undefined && data.lng !== undefined) {
+            setGpsData({ lat: data.lat, lng: data.lng, heading: data.h || 0 });
+          }
         } catch (err) {
           console.error("Failed to parse BLE JSON:", err);
         }
@@ -413,27 +439,21 @@ export default function App() {
 
         {/* Right Column */}
         <div className="w-[28%] flex flex-col justify-between">
-          <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative flex-grow-[2] flex flex-col border border-zinc-800/30 overflow-hidden mb-4">
-            <div className="absolute inset-0 bg-grid opacity-60" style={{ transform: 'perspective(500px) rotateX(45deg) scale(1.5)', transformOrigin: 'top' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#111111] z-0"></div>
-
-            <div className="p-4 lg:p-6 flex justify-between items-start z-10 w-full relative">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <CornerUpLeft className="w-5 h-5 lg:w-7 lg:h-7 text-[#00e5ff]" strokeWidth={3} />
-                <span className="font-bold text-xl lg:text-2xl text-white drop-shadow-md">200m</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[#00ff9d] font-bold text-lg lg:text-xl drop-shadow-[0_0_5px_rgba(0,255,157,0.3)]">12 min</span>
-                <span className="text-zinc-500 font-medium text-xs lg:text-sm mt-1">5.4 km</span>
-              </div>
-            </div>
+          <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative flex-grow-[2] flex flex-col border border-zinc-800/30 overflow-hidden mb-4 z-0">
+            <MapContainer center={[gpsData.lat, gpsData.lng]} zoom={16} className="absolute inset-0 z-0" zoomControl={false} attributionControl={false}>
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              />
+              <MapUpdater center={[gpsData.lat, gpsData.lng]} />
+              <Marker position={[gpsData.lat, gpsData.lng]} icon={createNavIcon(gpsData.heading)} />
+            </MapContainer>
             
-            <div className="absolute inset-x-0 bottom-6 lg:bottom-10 flex flex-col items-center justify-end z-10 pointer-events-none">
-              <div className="w-1 h-12 lg:h-20 bg-[#00e5ff] shadow-[0_0_15px_#00e5ff] relative">
-                <div className="absolute -top-4 -left-[10px] lg:-top-6 lg:-left-[14px]">
-                  <Navigation className="w-6 h-6 lg:w-8 lg:h-8 text-white fill-white transform rotate-45 drop-shadow-lg" />
-                </div>
+            <div className="absolute top-4 right-4 z-10 flex flex-col items-end bg-[#0a0a0a]/80 p-2 lg:p-3 rounded-xl backdrop-blur-md border border-zinc-800/50">
+              <div className="flex items-center gap-2">
+                <Navigation className="w-4 h-4 text-[#00e5ff]" />
+                <span className="text-[#00e5ff] font-bold text-sm lg:text-base drop-shadow-[0_0_5px_rgba(0,229,255,0.3)]">GPS LIVE</span>
               </div>
+              <span className="text-zinc-400 font-medium text-[10px] lg:text-xs mt-1">{gpsData.heading}° HDG</span>
             </div>
           </div>
 

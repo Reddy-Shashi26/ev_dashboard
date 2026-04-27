@@ -2,6 +2,8 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <TinyGPSPlus.h>
+#include <HardwareSerial.h>
 
 // ================== BLE SETUP ==================
 BLEServer* pServer = NULL;
@@ -12,6 +14,13 @@ bool oldDeviceConnected = false;
 // UUIDs (same as your React app)
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+// ================== GPS MODULE ==================
+TinyGPSPlus gps;
+HardwareSerial gpsSerial(2); // Use UART2 (RX=16, TX=17 on ESP32)
+float currentLat = 17.3850;
+float currentLng = 78.4867;
+int currentHeading = 0;
 
 // ================== HALL SENSOR ==================
 const int HALL_A_PIN = 34;
@@ -67,6 +76,10 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(HALL_B_PIN), handlePulse, RISING);
   attachInterrupt(digitalPinToInterrupt(HALL_C_PIN), handlePulse, RISING);
 
+  // GPS init
+  gpsSerial.begin(9600, SERIAL_8N1, 16, 17); // Most GPS modules use 9600 baud rate. RX=16, TX=17
+  Serial.println("GPS Serial Started on RX=16, TX=17");
+
   // BLE init
   BLEDevice::init("EV Bicycle");
   pServer = BLEDevice::createServer();
@@ -95,6 +108,11 @@ void setup() {
 // ================== LOOP ==================
 void loop() {
 
+  // Read GPS continuously
+  while (gpsSerial.available() > 0) {
+    gps.encode(gpsSerial.read());
+  }
+
   if (millis() - lastMillis >= 1000) {
 
     // Copy pulse safely
@@ -119,14 +137,23 @@ void loop() {
     int range = battery * 0.4;  
 
     // ================== DEBUG ==================
-    Serial.printf("Pulses this second: %lu | RPM: %.2f | Speed: %.2f km/h\n", count, rpm, speed);
+    Serial.printf("Pulses: %lu | Speed: %.2f km/h | GPS: %.4f, %.4f\n", count, speed, currentLat, currentLng);
+
+    // ================== UPDATE GPS DATA ==================
+    if (gps.location.isValid()) {
+      currentLat = gps.location.lat();
+      currentLng = gps.location.lng();
+    }
+    if (gps.course.isValid()) {
+      currentHeading = gps.course.deg();
+    }
 
     // ================== SEND VIA BLE ==================
     if (deviceConnected) {
-      char payload[80];
+      char payload[150];
       snprintf(payload, sizeof(payload),
-               "{\"s\":%.0f,\"b\":%d,\"r\":%d}",
-               speed, battery, range); // Changed %.2f to %.0f to match dashboard UI (no decimals)
+               "{\"s\":%.0f,\"b\":%d,\"r\":%d,\"lat\":%.6f,\"lng\":%.6f,\"h\":%d}",
+               speed, battery, range, currentLat, currentLng, currentHeading);
 
       pCharacteristic->setValue((uint8_t*)payload, strlen(payload));
       pCharacteristic->notify();
