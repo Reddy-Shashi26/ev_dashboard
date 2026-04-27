@@ -74,10 +74,9 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
 class MyCharacteristicCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
+      String rxValue = pCharacteristic->getValue();
       if (rxValue.length() > 0) {
-        String command = String(rxValue.c_str());
-        if (command.indexOf("RESET_BATT") != -1) {
+        if (rxValue.indexOf("RESET_BATT") != -1) {
           currentBattery = 80.0;
           lastSavedBattery = 80;
           preferences.putFloat("batt", 80.0);
