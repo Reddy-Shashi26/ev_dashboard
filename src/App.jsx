@@ -438,8 +438,10 @@ export default function App() {
         </div>
 
         {/* Right Column */}
-        <div className="w-[28%] flex flex-col justify-between">
-          <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative flex-grow-[2] flex flex-col border border-zinc-800/30 overflow-hidden mb-4 z-0">
+        <div className="w-[28%] flex flex-col justify-between h-full">
+          
+          {/* Huge GPS Map */}
+          <div className="bg-[#111111] rounded-[2rem] shadow-2xl relative flex-grow flex flex-col border border-zinc-800/30 overflow-hidden mb-4 lg:mb-6 z-0">
             <MapContainer center={[gpsData.lat, gpsData.lng]} zoom={16} className="absolute inset-0 z-0" zoomControl={false} attributionControl={false}>
               <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -450,36 +452,22 @@ export default function App() {
             
             <div className="absolute top-4 right-4 z-10 flex flex-col items-end bg-[#0a0a0a]/80 p-2 lg:p-3 rounded-xl backdrop-blur-md border border-zinc-800/50">
               <div className="flex items-center gap-2">
-                <Navigation className="w-4 h-4 text-[#00e5ff]" />
-                <span className="text-[#00e5ff] font-bold text-sm lg:text-base drop-shadow-[0_0_5px_rgba(0,229,255,0.3)]">GPS LIVE</span>
+                <Navigation className="w-5 h-5 text-[#00e5ff]" />
+                <span className="text-[#00e5ff] font-bold text-sm lg:text-lg drop-shadow-[0_0_5px_rgba(0,229,255,0.3)]">GPS LIVE</span>
               </div>
-              <span className="text-zinc-400 font-medium text-[10px] lg:text-xs mt-1">{gpsData.heading}° HDG</span>
+              <span className="text-zinc-400 font-medium text-[10px] lg:text-sm mt-1 tracking-widest">{gpsData.heading}° HDG</span>
             </div>
           </div>
 
-          <div className="bg-[#111111] rounded-[2rem] shadow-2xl p-4 lg:p-5 flex items-center gap-4 lg:gap-6 border border-zinc-800/30 flex-grow mb-4">
-            <div className="pl-2 lg:pl-4">
-              <Music className="w-6 h-6 lg:w-8 lg:h-8 text-[#00e5ff]" strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col justify-center">
-              <span className="font-bold text-base lg:text-xl text-white tracking-wide">Nightcall</span>
-              <span className="text-zinc-500 font-medium text-[10px] lg:text-sm">Kavinsky</span>
-            </div>
-          </div>
-
-          <div className="bg-[#111111] rounded-[2rem] shadow-2xl p-4 lg:p-6 flex justify-between items-center border border-zinc-800/30 flex-grow mb-4">
-            <span className="text-zinc-500 font-medium tracking-[0.2em] text-[10px] lg:text-sm pl-2">TRIP A</span>
-            <span className="font-bold text-lg lg:text-2xl text-white pr-2">142.5 km</span>
-          </div>
-
-          <div className="bg-[#0a0a0a] rounded-full shadow-2xl p-1.5 lg:p-2 flex border border-zinc-800/40 h-[12%]">
+          {/* Expanded Drive Modes */}
+          <div className="bg-[#0a0a0a] rounded-full shadow-2xl p-2 lg:p-3 flex border border-zinc-800/40 h-[15%] lg:h-[18%] shrink-0">
             {['ECO', 'CITY', 'SPORT'].map((mode) => (
               <button 
                 key={mode}
                 onClick={() => handleModeChange(mode)}
-                className={`flex-1 rounded-full font-semibold text-[10px] lg:text-sm tracking-[0.2em] transition-all duration-300 focus:outline-none flex items-center justify-center ${
+                className={`flex-1 rounded-full font-bold text-xs md:text-sm lg:text-lg tracking-[0.2em] transition-all duration-300 focus:outline-none flex items-center justify-center ${
                   driveMode === mode 
-                    ? `text-white shadow-[0_0_15px_${getModeColor()}80]` 
+                    ? `text-white shadow-[0_0_20px_${getModeColor()}80]` 
                     : 'text-zinc-500 hover:text-white'
                 }`}
                 style={{ backgroundColor: driveMode === mode ? getModeColor() : 'transparent' }}
