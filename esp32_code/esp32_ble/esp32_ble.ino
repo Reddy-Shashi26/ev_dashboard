@@ -15,9 +15,13 @@ bool oldDeviceConnected = false;
 
 // ================== HALL SENSOR ==================
 const int HALL_A_PIN = 34;
+const int HALL_B_PIN = 35;
+const int HALL_C_PIN = 32;
 
 // --- CALIBRATION FIX ---
-const float pulsePerRev = 70.0; // Adjusted based on your feedback (188 gave 10km/h, real max is 27km/h -> 188 * 10/27 = ~70)
+// Because we are now using 3 Hall sensors instead of 1, we get 3 times as many pulses per rotation!
+// Your previous accurate calibration of 70 is multiplied by 3 = 210.
+const float pulsePerRev = 210.0; 
 
 const float wheelDiameter = 0.66; // 26 inch in meters
 
@@ -30,8 +34,8 @@ unsigned long lastMillis = 0;
 void IRAM_ATTR handlePulse() {
   unsigned long now = micros();
 
-  // Debounce filter (Lowered to 300 micros so it doesn't accidentally block fast pulses at high speed!)
-  if (now - lastPulseTime > 300) {
+  // Debounce filter (Increased to 500 micros to prevent PWM electrical noise from causing speed jumps at low acceleration)
+  if (now - lastPulseTime > 500) {
     pulseCount++;
     lastPulseTime = now;
   }
@@ -54,9 +58,14 @@ class MyServerCallbacks: public BLEServerCallbacks {
 void setup() {
   Serial.begin(115200);
 
-  // Hall sensor
+  // Hall sensors
   pinMode(HALL_A_PIN, INPUT_PULLDOWN);
+  pinMode(HALL_B_PIN, INPUT_PULLDOWN);
+  pinMode(HALL_C_PIN, INPUT_PULLDOWN);
+  
   attachInterrupt(digitalPinToInterrupt(HALL_A_PIN), handlePulse, RISING);
+  attachInterrupt(digitalPinToInterrupt(HALL_B_PIN), handlePulse, RISING);
+  attachInterrupt(digitalPinToInterrupt(HALL_C_PIN), handlePulse, RISING);
 
   // BLE init
   BLEDevice::init("EV Bicycle");
