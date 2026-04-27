@@ -1,30 +1,43 @@
-/*
-  EV Dashboard ESP32 BLE Server Firmware
-  This code sets up an ESP32 as a Bluetooth Low Energy (BLE) server.
-  It broadcasts the exact Service and Characteristic UUIDs that the React dashboard is looking for.
-  
-  Dependencies: None (uses standard built-in ESP32 BLE libraries)
-  Board: DOIT ESP32 DEVKIT V1 (or any standard ESP32)
-*/
-
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+// ================== BLE SETUP ==================
 BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
-// Mock speed variable to simulate driving
-uint8_t currentSpeed = 0;
-
-// THESE UUIDS MUST MATCH THE ONES IN YOUR React App.jsx!
+// UUIDs (same as your React app)
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
-// Callback class to handle connection/disconnection events
+// ================== HALL SENSOR ==================
+const int HALL_A_PIN = 34;
+
+// --- CALIBRATION FIX ---
+const float pulsePerRev = 70.0; // Adjusted based on your feedback (188 gave 10km/h, real max is 27km/h -> 188 * 10/27 = ~70)
+
+const float wheelDiameter = 0.66; // 26 inch in meters
+
+volatile unsigned long pulseCount = 0;
+volatile unsigned long lastPulseTime = 0;
+
+unsigned long lastMillis = 0;
+
+// ================== ISR ==================
+void IRAM_ATTR handlePulse() {
+  unsigned long now = micros();
+
+  // Debounce filter (Lowered to 300 micros so it doesn't accidentally block fast pulses at high speed!)
+  if (now - lastPulseTime > 300) {
+    pulseCount++;
+    lastPulseTime = now;
+  }
+}
+
+// ================== BLE CALLBACK ==================
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
@@ -37,86 +50,91 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 };
 
+// ================== SETUP ==================
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting BLE work!");
 
-  // 1. Initialize the BLE Device with a name
+  // Hall sensor
+  pinMode(HALL_A_PIN, INPUT_PULLDOWN);
+  attachInterrupt(digitalPinToInterrupt(HALL_A_PIN), handlePulse, RISING);
+
+  // BLE init
   BLEDevice::init("EV Bicycle");
-
-  // 2. Create the BLE Server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
-  // 3. Create the BLE Service
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
-  // 4. Create a BLE Characteristic
-  // We use READ and NOTIFY properties so the browser can subscribe to data changes
   pCharacteristic = pService->createCharacteristic(
                       CHARACTERISTIC_UUID,
-                      BLECharacteristic::PROPERTY_READ   |
+                      BLECharacteristic::PROPERTY_READ |
                       BLECharacteristic::PROPERTY_NOTIFY
                     );
 
-  // Add the BLE2902 descriptor (Required for notifications to work in Web Bluetooth)
   pCharacteristic->addDescriptor(new BLE2902());
 
-  // 5. Start the service
   pService->start();
 
-  // 6. Start advertising the service so the browser can find it
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(false);
-  pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
   BLEDevice::startAdvertising();
-  
-  Serial.println("Waiting for a client connection to notify...");
+
+  Serial.println("BLE + Speed Monitor Started...");
+  Serial.println("Spin wheel exactly 1 time to calibrate if speed is wrong!");
 }
 
+// ================== LOOP ==================
 void loop() {
-    // If the browser dashboard is connected, start sending data
+
+  if (millis() - lastMillis >= 1000) {
+
+    // Copy pulse safely
+    noInterrupts();
+    unsigned long count = pulseCount;
+    pulseCount = 0;
+    interrupts();
+
+    // ================== CALCULATE ==================
+    // RPM of the actual physical wheel
+    float rpm = (count * 60.0) / pulsePerRev;
+    
+    // Speed = RPM * Circumference(pi*d) * 60 minutes / 1000 meters
+    float speed = (rpm * 3.1416 * wheelDiameter * 60.0) / 1000.0;
+    
+    // Clean up small noise (if speed is < 1km/h, show 0)
+    if (speed < 1.0) speed = 0;
+
+    // ================== OPTIONAL: BATTERY + RANGE ==================
+    // Replace later with real ADC voltage sensor
+    int battery = 85;  
+    int range = battery * 0.4;  
+
+    // ================== DEBUG ==================
+    Serial.printf("Pulses this second: %lu | RPM: %.2f | Speed: %.2f km/h\n", count, rpm, speed);
+
+    // ================== SEND VIA BLE ==================
     if (deviceConnected) {
-        
-        // ---------------------------------------------------------
-        // SIMULATION LOGIC: 
-        // We simulate the speed, battery, and range changing over time.
-        // In a real car, read these from your sensors!
-        // ---------------------------------------------------------
-        currentSpeed++;
-        if (currentSpeed > 180) {
-           currentSpeed = 0;
-        }
+      char payload[80];
+      snprintf(payload, sizeof(payload),
+               "{\"s\":%.0f,\"b\":%d,\"r\":%d}",
+               speed, battery, range); // Changed %.2f to %.0f to match dashboard UI (no decimals)
 
-        // Fake battery drain and range based on speed
-        int simulatedBattery = 100 - (currentSpeed / 4);
-        int simulatedRange = simulatedBattery * 4;
+      pCharacteristic->setValue((uint8_t*)payload, strlen(payload));
+      pCharacteristic->notify();
+    }
 
-        // Create a JSON payload: e.g. {"s": 120, "b": 83, "r": 320}
-        char payload[50];
-        snprintf(payload, sizeof(payload), "{\"s\":%d,\"b\":%d,\"r\":%d}", currentSpeed, simulatedBattery, simulatedRange);
+    lastMillis = millis();
+  }
 
-        // Set the characteristic value to the JSON string
-        pCharacteristic->setValue((uint8_t*)payload, strlen(payload));
-        
-        // Notify the browser that the data has changed
-        pCharacteristic->notify();
-        
-        // Wait 100ms before sending the next update
-        delay(100); 
-    }
-    
-    // Logic to handle disconnection cleanly
-    if (!deviceConnected && oldDeviceConnected) {
-        delay(500); // give the bluetooth stack the chance to get things ready
-        pServer->startAdvertising(); // restart advertising so you can reconnect
-        Serial.println("Start advertising again");
-        oldDeviceConnected = deviceConnected;
-    }
-    
-    // Logic to handle connection cleanly
-    if (deviceConnected && !oldDeviceConnected) {
-        oldDeviceConnected = deviceConnected;
-    }
+  // Handle reconnect
+  if (!deviceConnected && oldDeviceConnected) {
+    delay(500);
+    pServer->startAdvertising();
+    Serial.println("Re-advertising...");
+    oldDeviceConnected = deviceConnected;
+  }
+
+  if (deviceConnected && !oldDeviceConnected) {
+    oldDeviceConnected = deviceConnected;
+  }
 }
