@@ -390,10 +390,9 @@ export default function App() {
                   setBattery(80); // Fallback for testing UI visually without BLE
                 }
               }} 
-              className={`${isLightTheme ? 'bg-white hover:bg-zinc-50 border-zinc-200' : 'bg-[#151515] hover:bg-[#252525] border-zinc-800/30'} rounded-[1.5rem] flex-grow flex items-center justify-center gap-2 lg:gap-3 transition-colors shadow-lg border active:scale-95`}
+              className={`${isLightTheme ? 'bg-white hover:bg-zinc-50 border-zinc-200' : 'bg-[#151515] hover:bg-[#252525] border-zinc-800/30'} rounded-[1.5rem] flex-grow flex items-center justify-center transition-colors shadow-lg border active:scale-95`}
             >
-              <Zap className={`w-5 h-5 lg:w-7 lg:h-7 ${isLowBattery ? 'text-red-500 fill-red-500' : 'text-orange-500 fill-orange-500'}`} />
-              <span className={`font-bold text-xs lg:text-sm tracking-widest ${isLightTheme ? 'text-zinc-800' : 'text-white'}`}>RESET BATT</span>
+              <Zap className={`w-6 h-6 lg:w-8 lg:h-8 ${isLowBattery ? 'text-red-500 fill-red-500' : 'text-orange-500 fill-orange-500'}`} />
             </button>
             <button 
               onClick={() => { document.exitFullscreen(); }} 
