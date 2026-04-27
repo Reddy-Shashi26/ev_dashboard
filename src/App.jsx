@@ -46,8 +46,8 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   
-  // GPS State (Default Hyderabad, India)
-  const [gpsData, setGpsData] = useState({ lat: 17.3850, lng: 78.4867, heading: 0 });
+  // GPS State (Default 17°23'26"N 78°19'19"E)
+  const [gpsData, setGpsData] = useState({ lat: 17.390555, lng: 78.321944, heading: 0 });
   
   // Turn Indicators State
   const [leftIndicator, setLeftIndicator] = useState(false);

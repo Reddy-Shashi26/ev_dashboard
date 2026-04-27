@@ -18,8 +18,8 @@ bool oldDeviceConnected = false;
 // ================== GPS MODULE ==================
 TinyGPSPlus gps;
 HardwareSerial gpsSerial(2); // Use UART2 (RX=16, TX=17 on ESP32)
-float currentLat = 17.3850;
-float currentLng = 78.4867;
+float currentLat = 17.390555;
+float currentLng = 78.321944;
 int currentHeading = 0;
 
 // ================== HALL SENSOR ==================
