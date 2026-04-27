@@ -466,7 +466,7 @@ export default function App() {
         <div className="w-[28%] flex flex-col justify-between h-full">
           
           {/* Huge GPS Map */}
-          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#111111] border-zinc-800/30'} rounded-[2rem] shadow-2xl relative flex-grow flex flex-col border overflow-hidden mb-4 lg:mb-6 z-0 transition-colors duration-300`}>
+          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#111111] border-zinc-800/30'} rounded-[2rem] shadow-2xl relative flex-grow flex flex-col border overflow-hidden z-0 transition-colors duration-300`}>
             <MapContainer center={[gpsData.lat, gpsData.lng]} zoom={16} className="absolute inset-0 z-0" zoomControl={false} attributionControl={false}>
               <TileLayer
                 url={isLightTheme ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
@@ -482,24 +482,6 @@ export default function App() {
               </div>
               <span className="text-zinc-400 font-medium text-[10px] lg:text-sm mt-1 tracking-widest">{gpsData.heading}° HDG</span>
             </div>
-          </div>
-
-          {/* Expanded Drive Modes */}
-          <div className={`${isLightTheme ? 'bg-white border-zinc-200' : 'bg-[#0a0a0a] border-zinc-800/40'} rounded-full shadow-2xl p-2 lg:p-3 flex border h-[15%] lg:h-[18%] shrink-0 transition-colors duration-300`}>
-            {['ECO', 'CITY', 'SPORT'].map((mode) => (
-              <button 
-                key={mode}
-                onClick={() => handleModeChange(mode)}
-                className={`flex-1 rounded-full font-bold text-xs md:text-sm lg:text-lg tracking-[0.2em] transition-all duration-300 focus:outline-none flex items-center justify-center ${
-                  driveMode === mode 
-                    ? `text-white shadow-[0_0_20px_${getModeColor()}80]` 
-                    : (isLightTheme ? 'text-zinc-400 hover:text-zinc-600' : 'text-zinc-500 hover:text-white')
-                }`}
-                style={{ backgroundColor: driveMode === mode ? getModeColor() : 'transparent' }}
-              >
-                {mode}
-              </button>
-            ))}
           </div>
         </div>
       </div>
